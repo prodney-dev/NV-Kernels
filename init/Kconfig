@@ -1891,6 +1891,15 @@ config DEBUG_PERF_USE_VMALLOC
 
 	  Say N if unsure.
 
+config BOOT_TIME_PROFILER
+	bool "Boot time profiler"
+        default n
+	help
+	  Say Y here to enable the Boot time profiler.
+
+	  This profiler records and provides boot times for the Firmware,
+	  kernel and user world services
+
 endmenu
 
 config SYSTEM_DATA_VERIFICATION

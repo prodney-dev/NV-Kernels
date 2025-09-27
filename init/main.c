@@ -114,6 +114,10 @@
 
 #include <kunit/test.h>
 
+#ifdef CONFIG_BOOT_TIME_PROFILER
+#include <linux/boot_time_profiler.h>
+#endif
+
 static int kernel_init(void *);
 
 /*
@@ -1099,6 +1103,10 @@ void start_kernel(void)
 	arch_post_acpi_subsys_init();
 	kcsan_init();
 
+#ifdef CONFIG_BOOT_TIME_PROFILER
+	boot_time_prof_module_init();
+#endif
+
 	/* Do the rest non-__init'ed, we're now alive */
 	rest_init();
 
@@ -1463,8 +1471,13 @@ static int __ref kernel_init(void *unused)
 	 * Wait until kthreadd is all set-up.
 	 */
 	wait_for_completion(&kthreadd_done);
-
+#ifdef CONFIG_BOOT_TIME_PROFILER
+	add_boot_time_prof_entry("[Kernel] Initializing drivers");
+#endif
 	kernel_init_freeable();
+#ifdef CONFIG_BOOT_TIME_PROFILER
+	add_boot_time_prof_entry("[Kernel] Drivers initialized");
+#endif
 	/* need to finish all async __init code before freeing the memory */
 	async_synchronize_full();
 
@@ -1489,10 +1502,17 @@ static int __ref kernel_init(void *unused)
 
 	do_sysctl_args();
 
+#ifdef CONFIG_BOOT_TIME_PROFILER
+	add_boot_time_prof_entry("[Kernel] Starting init process");
+#endif
 	if (ramdisk_execute_command) {
 		ret = run_init_process(ramdisk_execute_command);
-		if (!ret)
+		if (!ret) {
+#ifdef CONFIG_BOOT_TIME_PROFILER
+			add_boot_time_prof_entry("[Kernel] Ramdisk init process started");
+#endif
 			return 0;
+		}
 		pr_err("Failed to execute %s (error %d)\n",
 		       ramdisk_execute_command, ret);
 	}
@@ -1505,8 +1525,12 @@ static int __ref kernel_init(void *unused)
 	 */
 	if (execute_command) {
 		ret = run_init_process(execute_command);
-		if (!ret)
+		if (!ret) {
+#ifdef CONFIG_BOOT_TIME_PROFILER
+			add_boot_time_prof_entry("[Kernel] Custom init process started");
+#endif
 			return 0;
+		}
 		panic("Requested init %s failed (error %d).",
 		      execute_command, ret);
 	}
@@ -1516,15 +1540,23 @@ static int __ref kernel_init(void *unused)
 		if (ret)
 			pr_err("Default init %s failed (error %d)\n",
 			       CONFIG_DEFAULT_INIT, ret);
-		else
+		else {
+#ifdef CONFIG_BOOT_TIME_PROFILER
+			add_boot_time_prof_entry("[Kernel] Default init process started");
+#endif
 			return 0;
+		}
 	}
 
 	if (!try_to_run_init_process("/sbin/init") ||
 	    !try_to_run_init_process("/etc/init") ||
 	    !try_to_run_init_process("/bin/init") ||
-	    !try_to_run_init_process("/bin/sh"))
+	    !try_to_run_init_process("/bin/sh")) {
+#ifdef CONFIG_BOOT_TIME_PROFILER
+		add_boot_time_prof_entry("[Kernel] Init process started");
+#endif
 		return 0;
+	}
 
 	panic("No working init found.  Try passing init= option to kernel. "
 	      "See Linux Documentation/admin-guide/init.rst for guidance.");

@@ -10,7 +10,16 @@
 #include <linux/arm_ffa.h>
 #include <linux/list.h>
 
+#ifdef CONFIG_BOOT_TIME_PROFILER
+#include <linux/boot_time_profiler.h>
+#endif
+
 #define DRV_NAME "nvidia-ffa-ec"
+
+#ifdef CONFIG_BOOT_TIME_PROFILER
+#define BOOT_PROF_MARKER_INIT_START "["DRV_NAME"] Starting mod init"
+#define BOOT_PROF_MARKER_INIT_END "["DRV_NAME"] Finished mod init"
+#endif
 
 /* platform device for FFA ACPI device (HID MSFT000C) */
 static struct platform_device *ffa_pdev;
@@ -813,7 +822,14 @@ static struct platform_driver nvidia_ffa_driver = {
 
 static int __init nvidia_ffa_init(void)
 {
-	return platform_driver_register(&nvidia_ffa_driver);
+#ifdef CONFIG_BOOT_TIME_PROFILER
+	add_boot_time_prof_entry(BOOT_PROF_MARKER_INIT_START);
+#endif
+	int ret = platform_driver_register(&nvidia_ffa_driver);
+#ifdef CONFIG_BOOT_TIME_PROFILER
+	add_boot_time_prof_entry(BOOT_PROF_MARKER_INIT_END);
+#endif
+	return ret;
 }
 module_init(nvidia_ffa_init);
 

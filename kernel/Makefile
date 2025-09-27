@@ -55,6 +55,7 @@ obj-$(CONFIG_MODULES) += module/
 obj-$(CONFIG_KCMP) += kcmp.o
 obj-$(CONFIG_FREEZER) += freezer.o
 obj-$(CONFIG_PROFILING) += profile.o
+obj-$(CONFIG_BOOT_TIME_PROFILER) += boot_time_profiler.o
 obj-$(CONFIG_STACKTRACE) += stacktrace.o
 obj-y += time/
 obj-$(CONFIG_FUTEX) += futex/
